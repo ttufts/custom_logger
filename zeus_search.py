@@ -13,7 +13,12 @@ import progressbar
 import collections
 
 class ZeusSearch:
-    relevant_types = ["HTTP request", "HTTPS request", "Grabbed data [HTTP(S)]", "POP3 login"]
+    relevant_types = [
+        "HTTP request",
+        "HTTPS request",
+        "Grabbed data [HTTP(S)]",
+        "POP3 login"
+    ]
     max_threads = 10
     DIVIDER = "========================================"
 
@@ -196,7 +201,6 @@ class ZeusSearch:
 
                 if time_cutoff:
                     if report_time < time_cutoff:
-                        # self.logger.debug("{} < {}".format(report_time, time_cutoff))
                         return None
 
                 data["report_time"] = report_time.strftime("%d.%m.%Y %H:%M:%S")
@@ -352,7 +356,10 @@ class ZeusSearch:
             output_path = os.path.join(dir_path, output_file)
 
             with open(output_path, "w") as f:
-                json.dump(search_results[search_term], f, indent=4, separators=(",", ": "))
+                json.dump(search_results[search_term],
+                          f,
+                          indent=4,
+                          separators=(",", ": "))
 
         return self.output_dir
 
@@ -376,7 +383,10 @@ class ZeusSearch:
             output_path = os.path.join(stats_dir, output_file)
 
             with open(output_path, "w") as f:
-                json.dump(stats[stat_type], f, indent=4, separators=(",", ": "))
+                json.dump(stats[stat_type],
+                          f,
+                          indent=4,
+                          separators=(",", ": "))
 
 
 if __name__ == '__main__':
