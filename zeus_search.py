@@ -67,7 +67,11 @@ class ZeusSearch:
     def search_source_lines(self, search_terms):
         results = {k: {} for k in search_terms}
 
-        for report_file in self.zeus_data:
+        if not self.verbose:
+            print "Performing search"
+            pbar = progressbar.ProgressBar(maxval=len(self.zeus_data)).start()
+
+        for i, report_file in enumerate(self.zeus_data):
             for bot_id in self.zeus_data[report_file]:
                 bot_report = self.zeus_data[report_file][bot_id]
 
@@ -78,6 +82,11 @@ class ZeusSearch:
                             results[found_term][report_file].append(hb)
                         else:
                             results[found_term][report_file] = [hb]
+            if not self.verbose:
+                pbar.update(i)
+
+        if not self.verbose:
+            pbar.finish()
 
         return results
 
@@ -89,9 +98,14 @@ class ZeusSearch:
         all_domains = []
         stats["ips"] = set()
 
-        for report in self.zeus_data:
-            for bot_id in self.zeus_data[report]:
-                bot_report = self.zeus_data[report][bot_id]
+        if not self.verbose:
+            print "Collecting statistics"
+            pbar = progressbar.ProgressBar(maxval=len(self.zeus_data)).start()
+
+
+        for i, report_file in enumerate(self.zeus_data):
+            for bot_id in self.zeus_data[report_file]:
+                bot_report = self.zeus_data[report_file][bot_id]
 
                 stats["all_bots"].append(bot_report)
 
@@ -105,6 +119,9 @@ class ZeusSearch:
                     if "ip_address" in hb:
                         stats["ips"].add(hb["ip_address"])
 
+            if not self.verbose:
+                pbar.update(i)
+
         stats["ips"] = list(stats["ips"])
         stats["email_records"] = list(stats["email_records"])
 
@@ -115,6 +132,9 @@ class ZeusSearch:
         stats["summary"]["bot_count"] = len(stats["all_bots"])
         stats["summary"]["email_count"] = len(stats["email_records"])
         stats["summary"]["ip_count"] = len(stats["ips"])
+
+        if not self.verbose:
+            pbar.finish()
 
         return stats
 
@@ -228,7 +248,7 @@ class ZeusSearch:
             hb_info = self.parse_bot_heartbeat(hb, time_cutoff=time_cutoff)
 
             # Don't bother with older heartbeats
-            if hb_info is {}:
+            if hb_info is {} or hb_info is None:
                 continue
 
             if "bot_id" in hb_info:
@@ -291,9 +311,18 @@ class ZeusSearch:
 
 
     def init_zeus_data_single(self, time_cutoff=None):
-        for filepath in self.enumerate_zeus_files():
+        zeus_files = self.enumerate_zeus_files()
+        if not self.verbose:
+            print "Reading botnet data from {}".format(self.zeus_path)
+            pbar = progressbar.ProgressBar(maxval=len(zeus_files)).start()
+        for i, filepath in enumerate(zeus_files):
             data = self.parse_file_data(filepath, time_cutoff=time_cutoff)
             self.zeus_data[filepath] = data
+            if not self.verbose:
+                pbar.update(i)
+
+        if not self.verbose:
+            pbar.finish()
 
 
     def init_zeus_data_multi(self, time_cutoff=None):
@@ -325,6 +354,7 @@ class ZeusSearch:
             with open(output_path, "w") as f:
                 json.dump(search_results[search_term], f, indent=4, separators=(",", ": "))
 
+        return self.output_dir
 
     def output_stats(self, stats):
         stat_types = [
@@ -401,13 +431,13 @@ if __name__ == '__main__':
         searchlist = []
 
         if os.path.isfile(args.find):
-            zs.logger.info("Reading file {} for search terms"
+            zs.logger.debug("Reading file {} for search terms"
                            .format(args.find))
 
             with open(filename) as f:
                 searchlist = [term.strip() for term in f]
         else:
-            zs.logger.info("Using {} as search term"
+            zs.logger.debug("Using {} as search term"
                            .format(args.find, args.find))
             searchlist.append(args.find)
 
@@ -416,11 +446,11 @@ if __name__ == '__main__':
         output_dir = zs.output_search_results(search_results)
 
         for search_term in search_results:
-            zs.logger.info("{} results for search term {}".format(
+            zs.logger.debug("{} results for search term {}".format(
                            len(search_results[search_term]),
                            search_term))
 
-        zs.logger.info("Writing output to {}".format(output_dir))
+        zs.logger.debug("Writing output to {}".format(output_dir))
 
     if args.statistics:
         stats = zs.collect_stats()
