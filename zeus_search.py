@@ -2,15 +2,13 @@ import argparse
 import json
 import re
 import logging
-from time import sleep
-from time import time
 from datetime import datetime, timedelta
-import tldextract
 import threading
 import Queue
 import os
 import progressbar
 import collections
+
 
 class ZeusSearch:
     relevant_types = [
@@ -28,7 +26,7 @@ class ZeusSearch:
                  multi=False,
                  verbose=False):
         self.LOG_FORMAT = ("%(asctime)s | %(levelname)-8s| {0: <25} |"
-                      " %(message)s".format(self.__class__.__name__))
+                           " %(message)s".format(self.__class__.__name__))
         self.verbose = verbose
         self.setup_logger()
 
@@ -41,7 +39,6 @@ class ZeusSearch:
         if self.multi:
             self.thread_pool = []
             self.thread_queue = Queue.Queue()
-
 
     def setup_logger(self):
         self.logger = logging.getLogger()
@@ -57,17 +54,13 @@ class ZeusSearch:
             ch.setLevel(logging.INFO)
         self.logger.addHandler(ch)
 
-
     def search_hb(self, search_terms, hb):
-        terms_in_hb = []
-
         for search_term in search_terms:
             if "source_line" in hb:
                 if search_term in hb["source_line"]:
                     return search_term
             else:
                 return None
-
 
     def search_source_lines(self, search_terms):
         results = {k: {} for k in search_terms}
@@ -95,7 +88,6 @@ class ZeusSearch:
 
         return results
 
-
     def collect_stats(self):
         stats = {}
         stats["all_bots"] = []
@@ -106,7 +98,6 @@ class ZeusSearch:
         if not self.verbose:
             print "Collecting statistics"
             pbar = progressbar.ProgressBar(maxval=len(self.zeus_data)).start()
-
 
         for i, report_file in enumerate(self.zeus_data):
             for bot_id in self.zeus_data[report_file]:
@@ -130,7 +121,7 @@ class ZeusSearch:
         stats["ips"] = list(stats["ips"])
         stats["email_records"] = list(stats["email_records"])
 
-        domcount=collections.Counter(all_domains)
+        domcount = collections.Counter(all_domains)
         stats["domain_records"] = domcount.most_common(100)
 
         stats["summary"] = {}
@@ -142,7 +133,6 @@ class ZeusSearch:
             pbar.finish()
 
         return stats
-
 
     def split_heartbeats(self, lines):
         heart_beats = []
@@ -157,7 +147,6 @@ class ZeusSearch:
             this_hb.append(line)
 
         return heart_beats
-
 
     def split_bot_reports(self, lines):
         bot_reports = []
@@ -181,7 +170,6 @@ class ZeusSearch:
             last_line = line
         return bot_reports
 
-
     def parse_bot_heartbeat(self, hb_lines, time_cutoff=None):
         data = {}
         hb_type = None
@@ -197,7 +185,7 @@ class ZeusSearch:
                 report_time = m[0]
 
                 report_time = datetime.strptime(report_time,
-                                                        "%d.%m.%Y %H:%M:%S")
+                                                "%d.%m.%Y %H:%M:%S")
 
                 if time_cutoff:
                     if report_time < time_cutoff:
@@ -239,7 +227,6 @@ class ZeusSearch:
 
         return data
 
-
     def parse_bot_report(self, lines, time_cutoff=None):
         bot_report = {}
         bot_report["heart_beats"] = []
@@ -261,7 +248,6 @@ class ZeusSearch:
             bot_report["heart_beats"].append(hb_info)
 
         return bot_report
-
 
     def parse_file_data(self, filepath, time_cutoff=None):
         file_data = {}
@@ -289,7 +275,6 @@ class ZeusSearch:
         else:
             return file_data
 
-
     def init_zeus_data(self, time_cutoff=None):
         self.logger.debug("Initializing Zeus data from {}"
                           .format(self.zeus_path))
@@ -298,7 +283,6 @@ class ZeusSearch:
             self.init_zeus_data_multi(time_cutoff)
         else:
             self.init_zeus_data_single(time_cutoff)
-
 
     def enumerate_zeus_files(self):
         zeus_files = []
@@ -312,7 +296,6 @@ class ZeusSearch:
             zeus_files.append(self.zeus_path)
 
         return zeus_files
-
 
     def init_zeus_data_single(self, time_cutoff=None):
         zeus_files = self.enumerate_zeus_files()
@@ -328,7 +311,6 @@ class ZeusSearch:
         if not self.verbose:
             pbar.finish()
 
-
     def init_zeus_data_multi(self, time_cutoff=None):
         for filepath in self.enumerate_zeus_files():
             thread = threading.Thread(target=self.parse_file_data,
@@ -343,7 +325,6 @@ class ZeusSearch:
                 self.zeus_data[filepath] = thread_result
             else:
                 break
-
 
     def output_search_results(self, search_results):
         curr_date = datetime.now().strftime("%d.%m.%Y")
@@ -442,13 +423,13 @@ if __name__ == '__main__':
 
         if os.path.isfile(args.find):
             zs.logger.debug("Reading file {} for search terms"
-                           .format(args.find))
+                            .format(args.find))
 
-            with open(filename) as f:
+            with open(args.find) as f:
                 searchlist = [term.strip() for term in f]
         else:
             zs.logger.debug("Using {} as search term"
-                           .format(args.find, args.find))
+                            .format(args.find, args.find))
             searchlist.append(args.find)
 
         search_results = zs.search_source_lines(searchlist)
@@ -457,8 +438,8 @@ if __name__ == '__main__':
 
         for search_term in search_results:
             zs.logger.debug("{} results for search term {}".format(
-                           len(search_results[search_term]),
-                           search_term))
+                            len(search_results[search_term]),
+                            search_term))
 
         zs.logger.debug("Writing output to {}".format(output_dir))
 
