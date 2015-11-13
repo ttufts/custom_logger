@@ -15,7 +15,7 @@ included_date = True
 cur_buff = []
 banklist = []
 bankdata = {}
-path = r'/extraspace/botnet-data'
+path = r'./botnet-data-large'
 data = {}
 mytime = datetime.now().strftime("%d.%m.%Y")
 cur_time = datetime.now()
@@ -239,7 +239,7 @@ def optionstats():
             lineNum += 1
 
     if not os.path.exists('stats'):
-        os.makedirs('stats')    
+        os.makedirs('stats')
     botsset = set(statsdata)
     emailset = set(email_buff)
     domcount=collections.Counter(topdoms_buff)
@@ -296,7 +296,7 @@ def optionstats():
         outfile4.write(IP + '\n')
     outfile4.close()
     if inputType == '--stats30':
-        outfile5.write('This is the 30day summary' + '\n' + 'Bots: ' + str(botcount) + '\n' + 'Email accounts: ' + str(emailcount) + '\n' + 'Bot IPs: ' + str(IPcount) + '\n')    
+        outfile5.write('This is the 30day summary' + '\n' + 'Bots: ' + str(botcount) + '\n' + 'Email accounts: ' + str(emailcount) + '\n' + 'Bot IPs: ' + str(IPcount) + '\n')
     elif inputType == '--hs30':
         mydate = argv[2]
         outfile5.write('This is the monthly summary for '+ mydate + '\n' + 'Bots: ' + str(botcount) + '\n' + 'Email accounts: ' + str(emailcount) + '\n' + 'Bot IPs: ' + str(IPcount) + '\n')
