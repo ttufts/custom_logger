@@ -391,8 +391,7 @@ if __name__ == '__main__':
                         help="Run statistics")
     parser.add_argument("-t",
                         "--timespan",
-                        help=("To run historic stats since day.month.year "
-                              "(Default: today - 30 days)"))
+                        help="To run historic stats since day.month.year ")
     parser.add_argument("-v",
                         "--verbose",
                         action="store_true",
@@ -411,7 +410,7 @@ if __name__ == '__main__':
                     verbose=args.verbose)
 
     if args.timespan is None:
-        time_cutoff = datetime.now() - timedelta(days=30)
+        time_cutoff = None
     else:
         time_cutoff = datetime.strptime(args.timespan, "%d.%m.%Y")
 
