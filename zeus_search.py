@@ -236,6 +236,13 @@ class ZeusSearch:
 
                 data["ip_address"] = m[0]
 
+            # Get user_id lines (often found in bank HTTPS grabbed data)
+            if line.startswith("userid="):
+                m = re.findall("userid=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
+
         return data
 
     def parse_bot_report(self, lines, time_cutoff=None):
