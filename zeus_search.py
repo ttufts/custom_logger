@@ -242,6 +242,12 @@ class ZeusSearch:
 
                 data["user_id"] = m[0]
 
+            # Get user_id lines (often found in bank HTTPS grabbed data)
+            if line.startswith("custid="):
+                m = re.findall("custid=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
 
         return data
 
