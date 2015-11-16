@@ -237,10 +237,8 @@ class ZeusSearch:
                 data["ip_address"] = m[0]
 
             # Get user_id lines (often found in bank HTTPS grabbed data)
-            if line.startswith("userid="):
-                m = re.findall("userid=(?: )*(.*)", line.strip())
-
-                data["user_id"] = m[0]
+            if "user" in line.lower():
+                data["user_id"] = line
 
             # Get user_id lines (often found in bank HTTPS grabbed data)
             if line.startswith("custid="):
