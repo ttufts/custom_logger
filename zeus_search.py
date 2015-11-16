@@ -170,6 +170,16 @@ class ZeusSearch:
             last_line = line
         return bot_reports
 
+    def strip_email_password(self, line):
+        email_regex = "pop3://.*:(.*)@.*"
+        email_blank = "XXXXX"
+        m = re.findall(email_regex, line)
+        if len(m) == 1:
+            pword = m[0]
+            return line.replace(pword, email_blank)
+        else:
+            return line
+
     def parse_bot_heartbeat(self, hb_lines, time_cutoff=None):
         data = {}
         hb_type = None
@@ -211,7 +221,8 @@ class ZeusSearch:
                 data["source_line"] = source
 
             if line.startswith("pop3"):
-                data["source_line"] = line.strip()
+                # data["source_line"] = line.strip()
+                data["source_line"] = self.strip_email_password(line.strip())
 
             # Get bot ID
             if line.startswith("Bot ID:"):
