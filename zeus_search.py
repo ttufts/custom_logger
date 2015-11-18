@@ -284,6 +284,11 @@ class ZeusSearch:
 
                 data["user_id"] = m[0]
 
+            if line.startswith("nutzername="):
+                m = re.findall("nutzername=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
             if line.startswith("userid="):
                 m = re.findall("userid=(?: )*(.*)", line.strip())
 
