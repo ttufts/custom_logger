@@ -437,6 +437,8 @@ class ZeusSearch:
     def check_cache(self, time_cutoff):
         if time_cutoff is None:
             time_cutoff = "ALL"
+        else:
+            time_cutoff = time_cutoff.strftime("%d.%m.%Y")
 
         try:
             self.cache[self.zeus_path][time_cutoff]
@@ -447,12 +449,16 @@ class ZeusSearch:
     def init_from_cache(self, time_cutoff):
         if time_cutoff is None:
             time_cutoff = "ALL"
+        else:
+            time_cutoff = time_cutoff.strftime("%d.%m.%Y")
 
         self.zeus_data = self.cache[self.zeus_path][time_cutoff]
 
     def update_cache(self, time_cutoff):
         if time_cutoff is None:
             time_cutoff = "ALL"
+        else:
+            time_cutoff = time_cutoff.strftime("%d.%m.%Y")
 
         if self.zeus_path not in self.cache:
             self.cache[self.zeus_path] = {}
@@ -484,7 +490,7 @@ if __name__ == '__main__':
                         help="Run statistics")
     parser.add_argument("-t",
                         "--timespan",
-                        help=()"To specify a timespan when parsing data files. "
+                        help=("To specify a timespan when parsing data files. "
                         "Will ignore anything older than this date"))
     parser.add_argument("-v",
                         "--verbose",
