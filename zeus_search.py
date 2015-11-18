@@ -25,12 +25,18 @@ class ZeusSearch:
                  zeus_path="/extraspace/botnet-data",
                  multi=False,
                  cache_file=None,
+                 debug_mode=False,
                  verbose=False):
         self.LOG_FORMAT = ("%(asctime)s | %(levelname)-8s| {0: <25} |"
                            " %(message)s".format(self.__class__.__name__))
         self.verbose = verbose
         self.setup_logger()
 
+        if debug_mode:
+            self.logger.warning(("Warning: debug mode on. This will result in "
+                                "PII being exported to output files and will "
+                                "consume more memory during initialization"))
+        self.debug_mode = debug_mode
         self.cache_file = cache_file
         self.multi = multi
         self.output_dir = output_dir
@@ -209,6 +215,9 @@ class ZeusSearch:
         data = {}
         hb_type = None
 
+        if self.debug_mode:
+            data["hb_lines"] = hb_lines
+
         for line in hb_lines:
             # Get report time
             if line.startswith("Report time:"):
@@ -280,6 +289,11 @@ class ZeusSearch:
 
                 data["user_id"] = m[0]
 
+            if line.startswith("Email="):
+                m = re.findall("Email=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
 
         return data
 
@@ -326,10 +340,7 @@ class ZeusSearch:
 
             file_data[bot_id] = report_info
 
-        if self.multi:
-            self.thread_queue.put((filepath, file_data))
-        else:
-            return file_data
+        return file_data
 
     def init_zeus_data(self, time_cutoff=None):
         self.logger.debug("Initializing Zeus data from {}"
@@ -367,20 +378,52 @@ class ZeusSearch:
         if not self.verbose:
             pbar.finish()
 
-    def init_zeus_data_multi(self, time_cutoff=None):
-        for filepath in self.enumerate_zeus_files():
-            thread = threading.Thread(target=self.parse_file_data,
-                                      args=[filepath],
-                                      kwargs={"time_cutoff": time_cutoff})
-            thread.start()
-            self.thread_pool.append(thread)
+    def multi_worker(self):
+        filepath, time_cutoff = self.thread_queue.get()
+        self.zeus_data[filepath] = self.parse_file_data(filepath, time_cutoff=time_cutoff)
+        self.thread_queue.task_done()
 
-        while True:
-            if len(self.zeus_data.keys()) < len(self.thread_pool):
-                filepath, thread_result = self.thread_queue.get()
-                self.zeus_data[filepath] = thread_result
-            else:
-                break
+        if not self.verbose:
+            self.init_tracking += 1
+            self.pbar.update(self.init_tracking)
+
+    def init_thread_pool(self, max_threads=100):
+        for i in range(max_threads):
+            t = threading.Thread(target=self.multi_worker)
+            t.setDaemon(True)
+            self.thread_pool.append(t)
+            t.start()
+
+    def init_zeus_data_multi(self, time_cutoff=None):
+        self.init_thread_pool()
+
+        all_files = self.enumerate_zeus_files()
+
+        if not self.verbose:
+            self.init_tracking = 0
+            self.pbar = progressbar.ProgressBar(maxval=len(all_files)).start()
+
+        for filepath in all_files:
+            self.thread_queue.put((filepath, time_cutoff))
+
+        self.thread_queue.join()
+
+        if not self.verbose:
+            self.pbar.finish()
+        #     thread = threading.Thread(target=self.parse_file_data,
+        #                               args=[filepath],
+        #                               kwargs={"time_cutoff": time_cutoff})
+        #     thread.start()
+        #     self.thread_pool.append(thread)
+        #
+        # while True:
+        #     if len(self.zeus_data.keys()) < len(self.thread_pool):
+        #         filepath, thread_result = self.thread_queue.get()
+        #         self.zeus_data[filepath] = thread_result
+        #     else:
+        #         break
+
+
 
     def output_search_results(self, search_results, json_output=False):
         curr_date = datetime.now().strftime("%d.%m.%Y")
@@ -545,6 +588,11 @@ if __name__ == '__main__':
                         action="store_true",
                         default=False,
                         help="Force re-initialize")
+    parser.add_argument("-x",
+                        "--debug_mode",
+                        action="store_true",
+                        default=False,
+                        help="Keep all heartbeat lines (Warning, will output PII and use much more memory)")
 
     args = parser.parse_args()
 
@@ -552,6 +600,7 @@ if __name__ == '__main__':
                     args.botnet_data,
                     multi=args.multithreaded,
                     cache_file=args.cache_file,
+                    debug_mode=args.debug_mode,
                     verbose=args.verbose)
 
     if args.timespan is None:
