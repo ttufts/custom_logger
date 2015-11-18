@@ -294,6 +294,11 @@ class ZeusSearch:
 
                 data["user_id"] = m[0]
 
+            if line.startswith("id="):
+                m = re.findall("id=([0-9]*)", line.strip())
+
+                data["user_id"] = m[0]
+
 
         return data
 
@@ -531,6 +536,18 @@ class ZeusSearch:
 
         self.zeus_data = self.cache[self.zeus_path][time_cutoff]
 
+        if "debug_mode" in self.cache[self.zeus_path][time_cutoff] and self.cache[self.zeus_path][time_cutoff]["debug_mode"]:
+            self.debug_mode = True
+
+        del self.zeus_data["debug_mode"]
+
+        if self.debug_mode:
+            self.logger.warning(("Warning: cache was initialized with debug "
+                                 "mode on. This will result in PII being "
+                                 "exported to output files and will consume "
+                                 "more memory during initialization"))
+
+
     def update_cache(self, time_cutoff):
         if time_cutoff is None:
             time_cutoff = "ALL"
@@ -541,9 +558,15 @@ class ZeusSearch:
             self.cache[self.zeus_path] = {}
 
         self.cache[self.zeus_path][time_cutoff] = self.zeus_data
+        if self.debug_mode:
+            self.cache[self.zeus_path][time_cutoff]["debug_mode"] = True
+        else:
+            self.cache[self.zeus_path][time_cutoff]["debug_mode"] = False
 
         with open(self.cache_file, "w") as f:
             json.dump(self.cache, f, indent=4, separators=(",", ": "))
+
+        del self.zeus_data["debug_mode"]
 
 
 if __name__ == '__main__':
