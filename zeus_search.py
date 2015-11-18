@@ -391,6 +391,7 @@ class ZeusSearch:
                               separators=(",", ": "))
                 else:
                     for report_file in search_results[search_term]:
+                        path, fname = os.path.split(report_file)
                         ip_address = None
                         user_id = None
                         report = search_results[search_term][report_file]
@@ -402,7 +403,7 @@ class ZeusSearch:
                                        "IP Addresses: {ip_address}\t"
                                        "User IDs: {user_id}\n"
                                        "Heartbeats: {heartbeats}\n").format(
-                                       report_file=report_file,
+                                       report_file=fname,
                                        ip_address=ip_address,
                                        user_id=user_id,
                                        heartbeats=json.dumps(
