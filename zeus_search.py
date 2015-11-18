@@ -24,17 +24,20 @@ class ZeusSearch:
                  output_dir,
                  zeus_path="/extraspace/botnet-data",
                  multi=False,
+                 cache_file=None,
                  verbose=False):
         self.LOG_FORMAT = ("%(asctime)s | %(levelname)-8s| {0: <25} |"
                            " %(message)s".format(self.__class__.__name__))
         self.verbose = verbose
         self.setup_logger()
 
+        self.cache_file = cache_file
         self.multi = multi
         self.output_dir = output_dir
 
         self.zeus_path = zeus_path
         self.zeus_data = {}
+        self.cache = {}
 
         if self.multi:
             self.thread_pool = []
@@ -77,9 +80,16 @@ class ZeusSearch:
                     found_term = self.search_hb(search_terms, hb)
                     if found_term:
                         if report_file in results[found_term]:
-                            results[found_term][report_file].append(hb)
+                            results[found_term][report_file]["heart_beats"].append(hb)
                         else:
-                            results[found_term][report_file] = [hb]
+                            results[found_term][report_file] = {}
+                            results[found_term][report_file]["heart_beats"] = [hb]
+                            results[found_term][report_file]["ip_addresses"] = []
+                            results[found_term][report_file]["user_ids"] = []
+                        if "ip_address" in hb:
+                            results[found_term][report_file]["ip_addresses"].append(hb["ip_address"])
+                        if "user_id" in hb:
+                            results[found_term][report_file]["user_ids"].append(hb["user_id"])
             if not self.verbose:
                 pbar.update(i)
 
@@ -238,7 +248,7 @@ class ZeusSearch:
 
             # Get user_id lines (often found in bank HTTPS grabbed data)
             if "user" in line.lower():
-                data["user_id"] = line
+                data["possible_user_line"] = line
 
             # Get user_id lines (often found in bank HTTPS grabbed data)
             if line.startswith("custid="):
@@ -348,7 +358,7 @@ class ZeusSearch:
             else:
                 break
 
-    def output_search_results(self, search_results):
+    def output_search_results(self, search_results, json_output=False):
         curr_date = datetime.now().strftime("%d.%m.%Y")
         for search_term in search_results:
             dir_path = os.path.join(self.output_dir, search_term)
@@ -359,10 +369,34 @@ class ZeusSearch:
             output_path = os.path.join(dir_path, output_file)
 
             with open(output_path, "w") as f:
-                json.dump(search_results[search_term],
-                          f,
-                          indent=4,
-                          separators=(",", ": "))
+                if json_output:
+                    json.dump(search_results[search_term],
+                              f,
+                              indent=4,
+                              separators=(",", ": "))
+                else:
+                    for report_file in search_results[search_term]:
+                        ip_address = None
+                        user_id = None
+                        report = search_results[search_term][report_file]
+                        if "ip_addresses" in report:
+                            ip_address = report["ip_addresses"]
+                        if "user_ids" in report:
+                            user_id = report["user_ids"]
+                        output_line = ("File: {report_file}\t"
+                                       "IP Addresses: {ip_address}\t"
+                                       "User IDs: {user_id}\n"
+                                       "Heartbeats: {heartbeats}\n").format(
+                                       report_file=report_file,
+                                       ip_address=ip_address,
+                                       user_id=user_id,
+                                       heartbeats=json.dumps(
+                                                            report["heart_beats"],
+                                                            indent=4,
+                                                            separators=(",", ": ")
+                                                            )
+                                       )
+                        f.write(output_line)
 
         return self.output_dir
 
@@ -390,6 +424,43 @@ class ZeusSearch:
                           f,
                           indent=4,
                           separators=(",", ": "))
+
+    def read_cache(self):
+        if not os.path.isfile(self.cache_file):
+            self.logger.warning("Cache file doesn't exist yet")
+            self.cache = {}
+            return
+
+        with open(self.cache_file) as f:
+            self.cache = json.load(f)
+
+    def check_cache(self, time_cutoff):
+        if time_cutoff is None:
+            time_cutoff = "ALL"
+
+        try:
+            self.cache[self.zeus_path][time_cutoff]
+            return True
+        except KeyError:
+            return False
+
+    def init_from_cache(self, time_cutoff):
+        if time_cutoff is None:
+            time_cutoff = "ALL"
+
+        self.zeus_data = self.cache[self.zeus_path][time_cutoff]
+
+    def update_cache(self, time_cutoff):
+        if time_cutoff is None:
+            time_cutoff = "ALL"
+
+        if self.zeus_path not in self.cache:
+            self.cache[self.zeus_path] = {}
+
+        self.cache[self.zeus_path][time_cutoff] = self.zeus_data
+
+        with open(self.cache_file, "w") as f:
+            json.dump(self.cache, f, indent=4, separators=(",", ": "))
 
 
 if __name__ == '__main__':
@@ -423,12 +494,27 @@ if __name__ == '__main__':
                         "--output_dir",
                         default=".",
                         help="Output directory")
+    parser.add_argument("-j",
+                        "--json",
+                        action="store_true",
+                        default=False,
+                        help="JSON output")
+    parser.add_argument("-c",
+                        "--cache_file",
+                        default=".zeus_cache",
+                        help="Cache indexed zeus data")
+    parser.add_argument("-i",
+                        "--initialize",
+                        action="store_true",
+                        default=False,
+                        help="Force re-initialize")
 
     args = parser.parse_args()
 
     zs = ZeusSearch(args.output_dir,
                     args.botnet_data,
                     multi=args.multithreaded,
+                    cache_file=args.cache_file,
                     verbose=args.verbose)
 
     if args.timespan is None:
@@ -436,7 +522,23 @@ if __name__ == '__main__':
     else:
         time_cutoff = datetime.strptime(args.timespan, "%d.%m.%Y")
 
-    zs.init_zeus_data(time_cutoff)
+    if args.initialize:
+        zs.init_zeus_data(time_cutoff)
+        zs.update_cache(time_cutoff)
+
+    else:
+        zs.logger.info("Reading cache {}".format(zs.cache_file))
+        zs.read_cache()
+
+        if zs.check_cache(time_cutoff):
+            zs.logger.info("Initializing from cache {}".format(zs.cache_file))
+            zs.init_from_cache(time_cutoff)
+        else:
+            zs.logger.info("Data for {} and {} not found in cache, initializing".format(zs.zeus_path, time_cutoff))
+            zs.init_zeus_data(time_cutoff)
+            zs.logger.info("Updating cache with data for {} and {}".format(zs.zeus_path, time_cutoff))
+            zs.update_cache(time_cutoff)
+
 
     # Search through Source lines
     if args.find:
@@ -455,7 +557,8 @@ if __name__ == '__main__':
 
         search_results = zs.search_source_lines(searchlist)
 
-        output_dir = zs.output_search_results(search_results)
+        output_dir = zs.output_search_results(search_results,
+                                              json_output=args.json)
 
         for search_term in search_results:
             zs.logger.debug("{} results for search term {}".format(
