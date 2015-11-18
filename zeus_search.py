@@ -20,6 +20,20 @@ class ZeusSearch:
     max_threads = 10
     DIVIDER = "========================================"
 
+    user_id_detection_pairs = [
+        ("custid=", "custid=(?: )*(.*)"),
+        ("username=", "username=(?: )*(.*)"),
+        ("nutzername=", "nutzername=(?: )*(.*)"),
+        ("userid=", "userid=(?: )*(.*)"),
+        ("Email=", "Email=(?: )*(.*)"),
+        ("id=", "id=([0-9]*)"),
+        ("login_email=", "login_email=(?: )*(.*)"),
+        ("loginfmt=", "loginfmt=(?: )*(.*)"),
+        ("client_id=", "client_id=(?: )*(.*)"),
+        ("login=", "login=(?: )*(.*)")
+    ]
+
+
     def __init__(self,
                  output_dir,
                  zeus_path="/extraspace/botnet-data",
@@ -274,35 +288,42 @@ class ZeusSearch:
             if "user" in line.lower():
                 data["possible_user_line"] = line
 
-            if line.startswith("custid="):
-                m = re.findall("custid=(?: )*(.*)", line.strip())
 
-                data["user_id"] = m[0]
+            for linestart, regex in self.user_id_detection_pairs:
+                if line.startswith(linestart):
+                    m = re.findall(regex, line.strip())
 
-            if line.startswith("username="):
-                m = re.findall("username=(?: )*(.*)", line.strip())
-
-                data["user_id"] = m[0]
-
-            if line.startswith("nutzername="):
-                m = re.findall("nutzername=(?: )*(.*)", line.strip())
-
-                data["user_id"] = m[0]
-
-            if line.startswith("userid="):
-                m = re.findall("userid=(?: )*(.*)", line.strip())
-
-                data["user_id"] = m[0]
-
-            if line.startswith("Email="):
-                m = re.findall("Email=(?: )*(.*)", line.strip())
-
-                data["user_id"] = m[0]
-
-            if line.startswith("id="):
-                m = re.findall("id=([0-9]*)", line.strip())
-
-                data["user_id"] = m[0]
+                    data["user_id"] = m[0]
+            #
+            # if line.startswith("custid="):
+            #     m = re.findall("custid=(?: )*(.*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
+            #
+            # if line.startswith("username="):
+            #     m = re.findall("username=(?: )*(.*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
+            #
+            # if line.startswith("nutzername="):
+            #     m = re.findall("nutzername=(?: )*(.*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
+            #
+            # if line.startswith("userid="):
+            #     m = re.findall("userid=(?: )*(.*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
+            #
+            # if line.startswith("Email="):
+            #     m = re.findall("Email=(?: )*(.*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
+            #
+            # if line.startswith("id="):
+            #     m = re.findall("id=([0-9]*)", line.strip())
+            #
+            #     data["user_id"] = m[0]
 
 
         return data
