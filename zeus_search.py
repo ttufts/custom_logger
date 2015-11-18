@@ -432,7 +432,10 @@ class ZeusSearch:
             if not os.path.isdir(dir_path):
                 os.makedirs(dir_path)
 
-            output_file = "{}_{}.txt".format(curr_date, search_term)
+            if self.debug_mode:
+                output_file = "{}_{}_DEBUG.txt".format(curr_date, search_term)
+            else:
+                output_file = "{}_{}.txt".format(curr_date, search_term)
             output_path = os.path.join(dir_path, output_file)
 
             with open(output_path, "w") as f:
@@ -452,6 +455,11 @@ class ZeusSearch:
                             ip_address = report["ip_addresses"]
                         if "user_ids" in report:
                             user_id = report["user_ids"]
+                        hb_string = json.dumps(
+                                             report["heart_beats"],
+                                             indent=4,
+                                             separators=(",", ": ")
+                                             )
                         output_line = ("C2: {report_file}\t"
                                        "IP Addresses: {ip_address}\t"
                                        "User IDs: {user_id}\n"
@@ -459,11 +467,7 @@ class ZeusSearch:
                                        report_file=c2,
                                        ip_address=ip_address,
                                        user_id=user_id,
-                                       heartbeats=json.dumps(
-                                                            report["heart_beats"],
-                                                            indent=4,
-                                                            separators=(",", ": ")
-                                                            )
+                                       heartbeats=hb_string
                                        )
                         f.write(output_line)
 
