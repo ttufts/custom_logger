@@ -8,7 +8,7 @@ import Queue
 import os
 import progressbar
 import collections
-
+import tldextract
 
 class ZeusSearch:
     relevant_types = [
@@ -120,7 +120,19 @@ class ZeusSearch:
                         if hb["type"] == "POP3 login":
                             stats["email_records"].add(hb["source_line"])
                         if hb["type"] in ["HTTP request", "HTTPS request"]:
-                            all_domains.append(hb["source_line"])
+                            fullurl = None
+                            url = tldextract.extract(hb["source_line"])
+
+                            if url.subdomain:
+                                fullurl = '.'.join(url[:3])
+                            elif url.domain and url.suffix:
+                                fullurl = url.domain+'.'+url.suffix
+                            else:
+                                fullurl = url.domain
+
+                            if fullurl:
+                                all_domains.append(fullurl)
+
 
                     if "ip_address" in hb:
                         stats["ips"].add(hb["ip_address"])
@@ -431,8 +443,12 @@ class ZeusSearch:
             self.cache = {}
             return
 
-        with open(self.cache_file) as f:
-            self.cache = json.load(f)
+        try:
+            with open(self.cache_file) as f:
+                self.cache = json.load(f)
+        except:
+            self.logger.error("Unable to read cache file.")
+            self.cache = {}
 
     def check_cache(self, time_cutoff):
         if time_cutoff is None:
