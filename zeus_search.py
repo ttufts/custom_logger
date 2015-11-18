@@ -392,6 +392,7 @@ class ZeusSearch:
                 else:
                     for report_file in search_results[search_term]:
                         path, fname = os.path.split(report_file)
+                        c2 = fname.replace("-", "/")
                         ip_address = None
                         user_id = None
                         report = search_results[search_term][report_file]
@@ -399,11 +400,11 @@ class ZeusSearch:
                             ip_address = report["ip_addresses"]
                         if "user_ids" in report:
                             user_id = report["user_ids"]
-                        output_line = ("File: {report_file}\t"
+                        output_line = ("C2: {report_file}\t"
                                        "IP Addresses: {ip_address}\t"
                                        "User IDs: {user_id}\n"
                                        "Heartbeats: {heartbeats}\n").format(
-                                       report_file=fname,
+                                       report_file=c2,
                                        ip_address=ip_address,
                                        user_id=user_id,
                                        heartbeats=json.dumps(
