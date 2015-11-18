@@ -32,7 +32,8 @@ class ZeusSearch:
         ("login_email=", "login_email=(?: )*(.*)"),
         ("loginfmt=", "loginfmt=(?: )*(.*)"),
         ("client_id=", "client_id=(?: )*(.*)"),
-        ("login=", "login=(?: )*(.*)")
+        ("login=", "login=(?: )*(.*)"),
+        ("user=", "user=(?: )*(.*)")
     ]
 
 
