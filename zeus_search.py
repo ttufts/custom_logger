@@ -265,9 +265,18 @@ class ZeusSearch:
             if "user" in line.lower():
                 data["possible_user_line"] = line
 
-            # Get user_id lines (often found in bank HTTPS grabbed data)
             if line.startswith("custid="):
                 m = re.findall("custid=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
+            if line.startswith("username="):
+                m = re.findall("username=(?: )*(.*)", line.strip())
+
+                data["user_id"] = m[0]
+
+            if line.startswith("userid="):
+                m = re.findall("userid=(?: )*(.*)", line.strip())
 
                 data["user_id"] = m[0]
 
