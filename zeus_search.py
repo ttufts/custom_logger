@@ -484,7 +484,8 @@ if __name__ == '__main__':
                         help="Run statistics")
     parser.add_argument("-t",
                         "--timespan",
-                        help="To run historic stats since day.month.year ")
+                        help=()"To specify a timespan when parsing data files. "
+                        "Will ignore anything older than this date"))
     parser.add_argument("-v",
                         "--verbose",
                         action="store_true",
