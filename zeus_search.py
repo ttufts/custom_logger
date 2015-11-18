@@ -66,7 +66,8 @@ class ZeusSearch:
                 return None
 
     def search_source_lines(self, search_terms):
-        results = {k: {} for k in search_terms}
+        # results = {k: {} for k in search_terms}
+        results = {}
 
         if not self.verbose:
             print "Performing search"
@@ -79,6 +80,8 @@ class ZeusSearch:
                 for hb in bot_report["heart_beats"]:
                     found_term = self.search_hb(search_terms, hb)
                     if found_term:
+                        if found_term not in results:
+                            results[found_term] = {}
                         if report_file in results[found_term]:
                             results[found_term][report_file]["heart_beats"].append(hb)
                         else:
