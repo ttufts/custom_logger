@@ -20,6 +20,8 @@ class ZeusSearch:
     max_threads = 10
     DIVIDER = "========================================"
 
+    CC_REGEX = "(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})"
+
     user_id_detection_pairs = [
         ("custid=", "custid=(?: )*(.*)"),
         ("username=", "username=(?: )*(.*)"),
@@ -123,6 +125,7 @@ class ZeusSearch:
 
     def collect_stats(self):
         stats = {}
+        stats["credit_card_count"] = 0
         stats["all_bots"] = []
         stats["email_records"] = set()
         all_domains = []
@@ -141,7 +144,7 @@ class ZeusSearch:
                 for hb in bot_report["heart_beats"]:
                     if "type" in hb:
                         if hb["type"] == "POP3 login":
-                            stats["email_records"].add(hb["source_line"])
+                            stats["email_records"].add(hb["email_address"])
                         if hb["type"] in ["HTTP request", "HTTPS request"]:
                             fullurl = None
                             url = tldextract.extract(hb["source_line"])
@@ -160,6 +163,9 @@ class ZeusSearch:
                     if "ip_address" in hb:
                         stats["ips"].add(hb["ip_address"])
 
+                    if "credit_cards" in hb:
+                        stats["credit_card_count"] += hb["credit_cards"]
+
             if not self.verbose:
                 pbar.update(i)
 
@@ -172,6 +178,7 @@ class ZeusSearch:
         stats["summary"] = {}
         stats["summary"]["bot_count"] = len(stats["all_bots"])
         stats["summary"]["email_count"] = len(stats["email_records"])
+        stats["summary"]["credit_card_count"] = stats["credit_card_count"]
         stats["summary"]["ip_count"] = len(stats["ips"])
 
         if not self.verbose:
@@ -269,8 +276,7 @@ class ZeusSearch:
                 data["source_line"] = source
 
             if line.startswith("pop3"):
-                # data["source_line"] = line.strip()
-                data["source_line"] = self.strip_email_password(line.strip())
+                data["email_address"] = self.strip_email_password(line.strip())
 
             # Get bot ID
             if line.startswith("Bot ID:"):
@@ -294,37 +300,11 @@ class ZeusSearch:
                     m = re.findall(regex, line.strip())
 
                     data["user_id"] = m[0]
-            #
-            # if line.startswith("custid="):
-            #     m = re.findall("custid=(?: )*(.*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
-            #
-            # if line.startswith("username="):
-            #     m = re.findall("username=(?: )*(.*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
-            #
-            # if line.startswith("nutzername="):
-            #     m = re.findall("nutzername=(?: )*(.*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
-            #
-            # if line.startswith("userid="):
-            #     m = re.findall("userid=(?: )*(.*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
-            #
-            # if line.startswith("Email="):
-            #     m = re.findall("Email=(?: )*(.*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
-            #
-            # if line.startswith("id="):
-            #     m = re.findall("id=([0-9]*)", line.strip())
-            #
-            #     data["user_id"] = m[0]
 
+            # Search for Credit Card numbers:
+            credit_cards = re.findall(self.CC_REGEX, line.strip())
+            if credit_cards is not None and len(credit_cards) > 0:
+                data["credit_cards"] = len(credit_cards)
 
         return data
 
