@@ -52,7 +52,7 @@ class BreachNotifier:
 
     def write_results_to_zip(self, results):
         # now = time.time().strftime("%d.%m.%Y %H:%M:%S")
-        now = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(time.time()))
+        now = time.strftime("%d.%m.%Y_%H:%M:%S", time.localtime(time.time()))
 
         if len(results) == 0:
             self.logger.info("No results were found")
@@ -62,7 +62,7 @@ class BreachNotifier:
 
         with zipfile.ZipFile(zip_filename, "w", compression=zipfile.ZIP_DEFLATED) as z:
             for domain in results:
-                breach_txt_filename = os.path.join(self.breach_name, "{}_{}.txt".format(self.breach_name, domain))
+                breach_txt_filename = os.path.join(self.breach_name, "{}_{}_{}.txt".format(self.breach_name, now, domain))
 
                 formatted_output = self.format_results(results[domain])
 
