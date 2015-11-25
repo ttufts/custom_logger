@@ -38,13 +38,16 @@ class BreachSearcher:
         domain = domain.decode("ascii", "ignore")
         self.logger.debug("Searching for {}".format(domain))
 
+        if domain.startswith("."):
+            domain = domain[1:]
+
         domain_email = "@{}".format(domain)
         subdomain = ".{}".format(domain)
 
         for site in self.breach_data:
             for email in self.breach_data[site]:
                 try:
-                    if domain_email in email:
+                    if email.endswith(domain_email):
                         results.append((email, site))
                         continue
                     if email.endswith(subdomain):
@@ -66,7 +69,8 @@ if __name__ == '__main__':
 
     if os.path.isfile(args.breach_dump):
         with open(args.breach_dump) as f:
-            breach_data = json.load(f)
+            all_json = json.load(f)
+            breach_data = all_json["found"]
 
     bs = BreachSearcher(breach_data=breach_data, verbose=args.verbose)
 
