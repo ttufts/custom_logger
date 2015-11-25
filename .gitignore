@@ -1,0 +1,6 @@
+*.pyc
+*.cfg
+build/
+dist/
+*.egg-info
+request_json_dump.json
