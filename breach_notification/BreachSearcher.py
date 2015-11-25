@@ -47,7 +47,7 @@ class BreachSearcher:
                     if domain_email in email:
                         results.append((email, site))
                         continue
-                    if email.endswith("subdomain"):
+                    if email.endswith(subdomain):
                         results.append((email, site))
                         continue
                 except UnicodeDecodeError:
