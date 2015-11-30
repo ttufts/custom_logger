@@ -57,12 +57,20 @@ class BreachNotifier:
         if len(results) == 0:
             self.logger.info("No results were found")
             return None
+        #
+        # total_accounts = 0
+        #
+        # for domain in results:
+        #     total_accounts += len(results[domain])
 
-        zip_filename = "{}_{}.zip".format(self.breach_name, now)
+        total_accounts = sum([len(value) for value in results.values()])
+
+        zip_filename = "{}_{}_{}.zip".format(self.breach_name, now, total_accounts)
 
         with zipfile.ZipFile(zip_filename, "w", compression=zipfile.ZIP_DEFLATED) as z:
             for domain in results:
-                breach_txt_filename = os.path.join(self.breach_name, "{}_{}_{}.txt".format(self.breach_name, now, domain))
+                num_accounts = len(results[domain])
+                breach_txt_filename = os.path.join(self.breach_name, "{}_{}_{}_{}.txt".format(self.breach_name, now, domain, num_accounts))
 
                 formatted_output = self.format_results(results[domain])
 

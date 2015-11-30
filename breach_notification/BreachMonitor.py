@@ -58,7 +58,9 @@ class BreachMonitor:
             self.logger.addHandler(ch)
 
     def get_new_files_from_email(self):
-        return list(self.gm.poll_for_new_emails(self.download_dir, ".txt"))
+        emails = list(self.gm.poll_for_new_emails(self.download_dir, ".txt"))
+        print emails
+        return emails
 
     def get_domain_from_email(self, email):
         username, domain = email.split("@")
