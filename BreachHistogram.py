@@ -58,7 +58,8 @@ class BreachHistogram:
         all_domains = []
         for breach_file in self.breach_files:
             with open(breach_file) as f:
-                breach_content = json.load(f)
+                all_json = json.load(f)
+                breach_content = all_json["found"]
 
             for site in breach_content:
                 for email_address in breach_content[site]:
@@ -71,6 +72,7 @@ class BreachHistogram:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("breach_dump", help="Path to breach dump. Can be file or directory. Directory will be recursed")
+    parser.add_argument("output_file", help="Path to output file")
     parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Print verbose debug output")
     args = parser.parse_args()
 
@@ -79,6 +81,11 @@ if __name__ == '__main__':
     all_domains = bn.get_domains()
 
     domcount = collections.Counter(all_domains)
+
+    with open(args.output_file, "w") as f:
+        for domain, count in domcount.most_common():
+            f.write("{}: {}\n".format(domain.encode("utf-8", "ignore"), count))
+
 
     # with open("country_tlds.json") as f:
     #     country_tlds = json.load(f)
@@ -90,12 +97,12 @@ if __name__ == '__main__':
     #             if re.match(country_re, domain):
     #                 # print("{}: {}".format(domain.encode("utf-8", "ignore"), count))
     #                 f.write("{}: {}\n".format(domain.encode("utf-8", "ignore"), count))
-
-    with open("twc.com_domain_count.txt", "w") as f:
-        for domain, count in domcount.most_common():
-            if re.match(".*twc.com$", domain) or re.match(".*twcable.com$", domain):
-                # print("{}: {}".format(domain.encode("utf-8", "ignore"), count))
-                f.write("{}: {}\n".format(domain.encode("utf-8", "ignore"), count))
+    #
+    # with open("twc.com_domain_count.txt", "w") as f:
+    #     for domain, count in domcount.most_common():
+    #         if re.match(".*twc.com$", domain) or re.match(".*twcable.com$", domain):
+    #             # print("{}: {}".format(domain.encode("utf-8", "ignore"), count))
+    #             f.write("{}: {}\n".format(domain.encode("utf-8", "ignore"), count))
 
 
     # print domcount
