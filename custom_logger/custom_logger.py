@@ -5,10 +5,16 @@ import logging
 class CustomLogger:
     def __init__(self, class_name, log_file=None, verbose=False):
         self.verbose = verbose
-        self.class_name = class_name
+        self.class_name = class_name[:24]
         self.log_file = log_file
 
         self.setup_logger()
+
+        self.info = self.logger.info
+        self.warning = self.logger.warning
+        self.error = self.logger.error
+        self.critical = self.logger.critical
+        self.debug = self.logger.debug
 
     def get_logger(self):
         return self.logger
@@ -40,7 +46,6 @@ class CustomLogger:
             else:
                 ch.setLevel(logging.CRITICAL)
 
-            print "Adding stream handler"
             self.logger.addHandler(ch)
             self.logger.stream = True
 
@@ -51,7 +56,6 @@ class CustomLogger:
             else:
                 fh.setLevel(logging.INFO)
             fh.setFormatter(formatter)
-            print "Adding file handler"
             self.logger.addHandler(fh)
             self.logger.file = True
 
