@@ -51,17 +51,11 @@ class BreachNotifier:
         return output
 
     def write_results_to_zip(self, results):
-        # now = time.time().strftime("%d.%m.%Y %H:%M:%S")
         now = time.strftime("%d.%m.%Y_%H:%M:%S", time.localtime(time.time()))
 
         if len(results) == 0:
             self.logger.info("No results were found")
             return None
-        #
-        # total_accounts = 0
-        #
-        # for domain in results:
-        #     total_accounts += len(results[domain])
 
         total_accounts = sum([len(value) for value in results.values()])
 
